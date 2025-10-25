@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Marta — 30 dies per celebrar</title>
+  <style>
+    :root{--bg1:#FFB74D;--bg2:#8E44AD;--card:#fff6ea;--accent:#6b3d00}
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{display:flex;align-items:center;justify-content:center;padding:20px;background:#f5deb3}
+    .stage{width:100%;max-width:920px;background:transparent;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.25);padding:18px}
+    .hero{position:relative;border-radius:12px;overflow:hidden;color:#2b1000;}
+    .hero-inner{position:relative;padding:22px 18px 12px}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:6px 0 18px;color:#2b100033}
+    .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+    .cell{background:rgba(255,255,255,0.12);backdrop-filter:blur(2px);border-radius:10px;padding:14px;text-align:center;user-select:none;min-height:78px;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff}
+    .cell.locked{opacity:0.46}
+    .cell .num{font-weight:700;font-size:20px}
+    .btn-open{margin-top:8px;background:rgba(255,255,255,0.18);border:0;padding:8px 10px;border-radius:8px;color:#2b1000;font-weight:700;cursor:pointer}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:999}
+    .modal .card{background:var(--card);padding:18px;border-radius:12px;max-width:720px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,0.25)}
+    .modal h2{margin-top:0}
+    .modal .content{margin:12px 0}
+    .modal .close{float:right;border:0;background:none;font-size:18px}
+    .small{font-size:13px;color:#6b3d00}
+    .admin-btn{position:absolute;right:12px;top:12px;background:transparent;border:0;color:#fff;font-weight:700;cursor:pointer}
+    @media (max-width:640px){.grid{grid-template-columns:repeat(5,1fr);gap:10px}.cell{min-height:70px;padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="hero">
+      <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTIwMCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyMDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjZmZmN2I0Ii8+PHBhdGggZD0iTTE4MCAyODAgcTIwIC0yNSA0MCAwIHR0NDAgMCIgZmlsbD0iIzJiMTAwMCIvPjxwYXRoIGQ9Ik0yNjAgMjkwIHEzMCAtMTAgNjAgMCIgZmlsbD0iIzJiMTAwMCIvPjwvc3ZnPg==" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;opacity:0.9" alt="Fons sabana" />
+      <div class="hero-inner">
+        <button class="admin-btn" id="adminBtn" title="Administrador">⚙️</button>
+        <h1>30 dies per celebrar el teu gran dia</h1>
+        <p class="lead">Cada dia tindràs una sorpresa. Hakuna Matata.</p>
+        <div class="grid" id="grid"></div>
+        <p class="small">Prova amb ?testDay=NUM per obrir una casella de prova.</p>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="modal">
+    <div class="card">
+      <button class="close" id="closeModal">✕</button>
+      <h2 id="modalTitle">Sorpresa</h2>
+      <div class="content" id="modalContent"></div>
+      <div style="text-align:right;margin-top:6px"><button id="modalCloseBtn">Tancar</button></div>
+    </div>
+  </div>
+  <script>
+    let gifts = Array.from({length:30},(_,i)=>({type:'text',content:'Aquesta casella encara està buida.'}));
+    gifts[0] = {type:'text',content:'Benvinguda! Aquest és el primer regal. Estima, mama.'};
+    const startMonth = 10; const startDay = 1; const endDay = 30;
+    const adminPassword = 'MartaAdmin2025';
+    const params = new URLSearchParams(location.search);
+    const testDay = params.get('testDay') ? Number(params.get('testDay')) : null;
+    function todayNumber(){
+      const now = new Date();
+      if(testDay && testDay>=1 && testDay<=30) return testDay;
+      const month = now.getMonth();
+      const day = now.getDate();
+      if(month===10 && day>=startDay && day<=endDay) return day;
+      if(month<10) return 0; if(month>10) return endDay; return 0;
+    }
+    const openDay = todayNumber();
+    const grid = document.getElementById('grid');
+    function render(){
+      grid.innerHTML='';
+      for(let i=1;i<=30;i++){
+        const c = document.createElement('div');
+        c.className='cell'+(i>openDay?' locked':'');
+        c.innerHTML = `<div class="num">${String(i).padStart(2,'0')}</div>`;
+        if(i<=openDay){
+          const btn = document.createElement('button');
+          btn.className='btn-open';
+          btn.textContent='Obrir';
+          btn.addEventListener('click',()=>openCell(i));
+          c.appendChild(btn);
+        } else {
+          const lock = document.createElement('div');
+          lock.textContent='Tancat';
+          lock.style.marginTop='8px';
+          c.appendChild(lock);
+        }
+        grid.appendChild(c);
+      }
+    }
+    function openCell(i){
+      const g = gifts[i-1] || {type:'text',content:'Sense contingut'};
+      const title = `Dia ${String(i).padStart(2,'0')}`;
+      const contentDiv = document.getElementById('modalContent');
+      contentDiv.innerHTML='';
+      if(g.type==='text'){const p=document.createElement('p');p.textContent=g.content;contentDiv.appendChild(p)}
+      else if(g.type==='image'){const img=document.createElement('img');img.src=g.content;img.style.maxWidth='100%';img.alt='imatge';contentDiv.appendChild(img)}
+      else if(g.type==='video'){if(g.content.includes('youtube')||g.content.includes('youtu.be')){let id=null;try{id=g.content.split('v=')[1]?g.content.split('v=')[1].split('&')[0]:g.content.split('/').pop()}catch(e){};const iframe=document.createElement('iframe');iframe.width='100%';iframe.height='360';iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';iframe.allowFullscreen=true;iframe.src=`https://www.youtube.com/embed/${id}`;contentDiv.appendChild(iframe)}else{const vid=document.createElement('video');vid.controls=true;vid.src=g.content;vid.style.maxWidth='100%';contentDiv.appendChild(vid)}}
+      else if(g.type==='audio'){const a=document.createElement('audio');a.controls=true;a.src=g.content;contentDiv.appendChild(a)}
+      else if(g.type==='link'){const a=document.createElement('a');a.href=g.content;a.target='_blank';a.textContent='Obrir enllaç';contentDiv.appendChild(a)}
+      document.getElementById('modalTitle').textContent=title;
+      document.getElementById('modal').style.display='flex';
+    }
+    document.getElementById('closeModal').onclick=()=>document.getElementById('modal').style.display='none';
+    document.getElementById('modalCloseBtn').onclick=()=>document.getElementById('modal').style.display='none';
+    render();
+  </script>
+</body>
+</html>
